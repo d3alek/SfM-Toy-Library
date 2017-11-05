@@ -59,6 +59,9 @@ set(SFM_TOY_APP_LIBS
         ${CERES_LIBRARIES}
     )
 
+# for YCM to work
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
+
 target_link_libraries(SfMToyUI 
 	SfMToyLibrary
 	${SFM_TOY_APP_LIBS}

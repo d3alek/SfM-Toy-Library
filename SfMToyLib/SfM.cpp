@@ -87,6 +87,8 @@ ErrorCode SfM::runSfM() {
     //Lastly - add more camera views to the map
     addMoreViewsToReconstruction();
 
+    showDepthImage();
+
     if (mConsoleDebugLevel <= LOG_INFO) {
         cout << "----------------------- Done -----------------------" << endl;
     }
@@ -94,6 +96,44 @@ ErrorCode SfM::runSfM() {
     return OKAY;
 }
 
+
+void SfM::showDepthImage() {
+    cout << "----------------- Calculating Depth Map -----------------" << endl;
+    for (unsigned int povIndex = 0; povIndex < mImages.size(); ++povIndex) {
+        vector<double> depths;
+        vector<double> featureIndexes;
+        int povFeatureIndex;
+        // TODO use the camera matrices to map all the points in the cloud to the point of view for denser depth map
+        for (const Point3DInMap& cloudPoint : mReconstructionCloud)    { 
+            povFeatureIndex = -1;
+            for (const auto& viewAndPoint : cloudPoint.originatingViews) {
+                if (viewAndPoint.first == povIndex) {
+                    // cloud point is a 2D feature in point of view
+                    povFeatureIndex = viewAndPoint.second;
+                    break;
+                }
+            }
+            if (povFeatureIndex != -1) {
+                featureIndexes.push_back(povFeatureIndex);
+                depths.push_back(cloudPoint.p.z);
+            }
+        }
+        double minVal, maxVal;
+        minMaxLoc(depths, &minVal, &maxVal);
+        Mat tmp(mImages[povIndex]); 
+        cout << "Image " << povIndex << " depth map density: " << depths.size() << endl;
+        for (unsigned int i = 0; i < depths.size(); i++) {
+            double _d = MAX(MIN((depths[i]-minVal)/(maxVal-minVal),1.0),0.0);
+
+            KeyPoint point = mImageFeatures[povIndex].keyPoints[povFeatureIndex];
+            circle(tmp, point.pt, 1, Scalar(255 * (1.0-(_d)),255,255), CV_FILLED);
+        }
+        cvtColor(tmp, tmp, CV_HSV2BGR);
+        imshow("Depth Map", tmp);
+        waitKey(0);
+    }
+    destroyWindow("Depth Map");
+}
 
 bool SfM::setImagesDirectory(const std::string& directoryPath) {
     using namespace boost::filesystem;

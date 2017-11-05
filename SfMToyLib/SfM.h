@@ -60,6 +60,7 @@ public:
      * Image file with extensions "jpg" and "png" will be used.
      * @return true on success.
      */
+    void showDepthImage();
     bool setImagesDirectory(const std::string& directoryPath);
 
     /**
